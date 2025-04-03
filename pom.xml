@@ -16,12 +16,49 @@
 
     <properties>
         <java.version>23</java.version>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
         <sonar.organization>retailpulse</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.projectKey>RetailPulse_identity-access-management</sonar.projectKey>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <maven.compiler.source>23</maven.compiler.source>
+        <maven.compiler.target>23</maven.compiler.target>        
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>        
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+              <groupId>org.sonarsource.scanner.maven</groupId>
+              <artifactId>sonar-maven-plugin</artifactId>
+              <version>5.1.0.4751</version> <!-- Or the latest version -->              
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+              <groupId>org.jacoco</groupId>
+              <artifactId>jacoco-maven-plugin</artifactId>
+              <version>0.8.13</version> <!-- Use the latest stable version -->
+              <executions>
+                  <execution>
+                      <goals>
+                          <goal>prepare-agent</goal>
+                      </goals>
+                  </execution>
+                  <execution>
+                      <id>report</id>
+                      <phase>verify</phase>
+                      <goals>
+                          <goal>report</goal>
+                      </goals>
+                  </execution>
+              </executions>
+            </plugin>                    
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
@@ -67,14 +104,5 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
