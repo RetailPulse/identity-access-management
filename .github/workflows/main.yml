@@ -1,7 +1,7 @@
 name: RetailPulse Backend CI Pipeline
 
 env:
-  JAVA_VERSION: '22'          # Centralized JDK version
+  JAVA_VERSION: '23'          # Centralized JDK version
   DISTRIBUTION: 'temurin'     # Centralized distribution
   MAVEN_CACHE: 'maven'        # Centralized cache type
 
@@ -92,6 +92,9 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.DISTRIBUTION }}
           cache: ${{ env.MAVEN_CACHE }}
+
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(readlink -f $(which java) | sed 's:bin/java::')" >> $GITHUB_ENV
 
       - name: Install Snyk CLI
         run: npm install -g snyk
