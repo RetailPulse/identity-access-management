@@ -1,7 +1,7 @@
 name: RetailPulse Backend CI Pipeline
 
 env:
-  JAVA_VERSION: '23'          # Centralized JDK version
+  JAVA_VERSION: '22'          # Centralized JDK version
   DISTRIBUTION: 'temurin'     # Centralized distribution
   MAVEN_CACHE: 'maven'        # Centralized cache type
 
