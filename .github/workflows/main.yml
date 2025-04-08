@@ -93,6 +93,9 @@ jobs:
           distribution: ${{ env.DISTRIBUTION }}
           cache: ${{ env.MAVEN_CACHE }}
 
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(readlink -f $(which java) | sed 's:bin/java::')" >> $GITHUB_ENV
+
       - name: Install Snyk CLI
         run: npm install -g snyk
 
@@ -104,3 +107,4 @@ jobs:
       
       - name: Monitor project in Snyk dashboard
         run: snyk monitor --all-projects --org=retailpulse
+      
