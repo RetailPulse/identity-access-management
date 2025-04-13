@@ -1,7 +1,7 @@
 server.port: 8081
 
 auth:
-  origin: "http://localhost:4200"
+  origin: "http://retailpulse.me:4200"
 
 spring:
   datasource:
@@ -18,8 +18,8 @@ spring:
 client:
   id: client
   name: retail-pulse
-  redirect-uri: http://localhost:4200
-  post-logout-redirect-uri: http://localhost:4200
+  redirect-uri: http://retailpulse.me:4200
+  post-logout-redirect-uri: http://retailpulse.me:4200
 
 logging:
   level:
