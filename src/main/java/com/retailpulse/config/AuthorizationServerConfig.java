@@ -1,5 +1,6 @@
 package com.retailpulse.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -32,6 +33,9 @@ import java.util.stream.Collectors;
 
 @Configuration
 public class AuthorizationServerConfig {
+
+    @Value("${auth.origin}")
+    private String originURL;
 
     @Bean
     @Order(1)
@@ -80,7 +84,7 @@ public class AuthorizationServerConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));  // Specify your frontend URL
+        configuration.setAllowedOrigins(List.of(originURL));  // Specify your frontend URL
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));

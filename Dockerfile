@@ -9,7 +9,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Build the application
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # Second stage: Run the built JAR in a lightweight JDK image
 FROM eclipse-temurin:23-jdk-alpine AS runner
