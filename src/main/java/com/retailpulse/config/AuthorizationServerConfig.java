@@ -64,9 +64,6 @@ public class AuthorizationServerConfig {
                 .loginProcessingUrl("/login")
                 .permitAll());
 
-        http.csrf(
-                c -> c.disable()
-        );
 
         http.authorizeHttpRequests(
                 c -> c
