@@ -58,7 +58,6 @@ public class AuthorizationServerConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-//        http.formLogin(Customizer.withDefaults());
         http.formLogin(form -> form
                 .loginPage("/rp-login")
                 .loginProcessingUrl("/login")
