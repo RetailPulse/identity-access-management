@@ -11,13 +11,14 @@ on:
   push:
     branches: 
       - "main"
-  # pull_request:
-  #   branches:
-  #     - "main" # Trigger on pull requests targeting the "stage" branch
-  #   types:
-  #     - opened
-  #     - synchronize
-  #     - reopened
+
+  pull_request:
+    branches:
+      - "main" # Trigger on pull requests targeting the "stage" branch
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   iam-unit-tests:
