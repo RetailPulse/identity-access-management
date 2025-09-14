@@ -25,10 +25,10 @@ logging:
   level:
     org:
       springframework:
-        security: TRACE
+        security: INFO
         security.oauth2:
             server:
-              authorization: TRACE
-        web: DEBUG
+              authorization: INFO
+        web: INFO
   file:
     name: logs/iam.log
