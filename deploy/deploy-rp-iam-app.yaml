@@ -61,7 +61,8 @@ spec:
     spec:
       containers:
       - image: docker.io/casperyap/rp-iam-app:v0.1.0
-        name: myapp        
+        name: app-rp-iam
+        imagePullPolicy: Always        
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
