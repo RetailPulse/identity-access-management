@@ -1,4 +1,4 @@
-name: RetailPulse Backend CI Pipeline
+name: RetailPulse IAM CI Pipeline
 
 env:
   JAVA_VERSION: '23'          # Centralized JDK version
@@ -6,9 +6,12 @@ env:
   MAVEN_CACHE: 'maven'        # Centralized cache type
 
 on:
+  workflow_dispatch:
+
   push:
     branches: 
       - "main"
+
   pull_request:
     branches:
       - "main" # Trigger on pull requests targeting the "stage" branch
@@ -18,7 +21,8 @@ on:
       - reopened
 
 jobs:
-  iam-unit-tests:      
+  iam-unit-tests:
+    name: IAM Unit Test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repository
@@ -40,8 +44,17 @@ jobs:
     - name: Test Identity Access Management
       run: mvn --batch-mode test --file pom.xml
 
+    - name: Generate Coverage Report
+      run: mvn jacoco:report --file pom.xml
+
+    - name: Upload Code Coverage Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: target/site/jacoco/
+
   iam-sonarqube-scan:
-    name: Build and analyze
+    name: IAM SonarQube Scan
     needs: iam-unit-tests
     runs-on: ubuntu-latest
     steps:
@@ -49,35 +62,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.DISTRIBUTION }}
           cache: ${{ env.MAVEN_CACHE }}
+
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build, Test, and Generate Code Coverage Report
-        run: mvn -B clean verify jacoco:report  
-      - name: Upload Code Coverage Report as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-report
-          path: target/site/jacoco/
+
+          restore-keys: ${{ runner.os }}-m2      
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+
   iam-snyk-scan:
     name: IAM Snyk Scan
     needs: iam-unit-tests
