@@ -74,7 +74,9 @@ public class AuthorizationServerConfig {
                                 "/login",
                                 "/images/**",
                                 "/css/**",
-                                "/js/**"
+                                "/js/**",
+                                "/favicon.ico",
+                                "/.well-known/**"
                         ).permitAll()
                         .anyRequest().authenticated()
         );
