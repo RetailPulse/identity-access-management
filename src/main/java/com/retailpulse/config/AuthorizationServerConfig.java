@@ -56,12 +56,24 @@ public class AuthorizationServerConfig {
             .formLogin(form -> form
                 .loginPage("/rp-login")
                 .loginProcessingUrl("/login")
-                .permitAll()
-            )
-            .authorizeHttpRequests(c -> c
-                .requestMatchers("/login", "/images/**", "/css/**", "/js/**").permitAll()
-                .anyRequest().authenticated()
-            );
+                .permitAll());
+
+        http.csrf(
+                c -> c.disable()
+        );
+
+        http.authorizeHttpRequests(
+                c -> c
+                        .requestMatchers(
+                                "/login",
+                                "/images/**",
+                                "/css/**",
+                                "/js/**",
+                                "/favicon.ico",
+                                "/.well-known/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+        );
 
         return http.build();
     }
