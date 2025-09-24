@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
@@ -37,14 +38,18 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
-        authorizationServerConfigurer.oidc(Customizer.withDefaults());
-        http
-            .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-            .with(authorizationServerConfigurer, Customizer.withDefaults())
-            .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login")))
-            .cors(c -> c.configurationSource(corsConfigurationSource()));
+    public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
+
+        http.exceptionHandling((e) ->
+                e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
+        );
+
+        http.cors(c -> {
+            c.configurationSource(corsConfigurationSource());
+        });
 
         return http.build();
     }
@@ -68,9 +73,7 @@ public class AuthorizationServerConfig {
                                 "/login",
                                 "/images/**",
                                 "/css/**",
-                                "/js/**",
-                                "/favicon.ico",
-                                "/.well-known/**"
+                                "/js/**"
                         ).permitAll()
                         .anyRequest().authenticated()
         );
