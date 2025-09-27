@@ -118,14 +118,20 @@
             <version>7.4</version>
         </dependency>
 
+        <!-- micrometer core tracer API -->
         <dependency>
             <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+            <artifactId>micrometer-tracing</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>io.zipkin.reporter2</groupId>
-            <artifactId>zipkin-reporter-brave</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
         </dependency>
 
         <dependency>
