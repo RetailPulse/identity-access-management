@@ -85,9 +85,9 @@ public class AuthorizationServerConfig {
                 urlPrefix + "/rp-login",
                 urlPrefix + "/.well-known/**",
                 urlPrefix + "/oauth2/**",
-                urlPrefix + "/images/**",
-                urlPrefix + "/css/**",
-                urlPrefix + "/js/**",
+                "/images/**",
+                "/css/**",
+                "/js/**",
                 "/actuator/health"
             ).permitAll()
             .anyRequest().authenticated()
