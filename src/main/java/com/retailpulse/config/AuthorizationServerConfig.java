@@ -36,61 +36,47 @@ public class AuthorizationServerConfig {
     @Value("${auth.origin}")
     private String originURL;
 
-    @Value("${auth.issuer}")
-    private String issuerURL;
-
-    @Value("${server.urlPrefix:/auth}")
-    private String urlPrefix;
-
-    /**
-     * Security filter chain for OAuth2 Authorization Server endpoints
-     */
     @Bean
     @Order(1)
     public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
-        // Apply default Authorization Server configuration
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
-        // Enable OIDC endpoints
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
 
-        // Custom login page for unauthenticated users
-        http.exceptionHandling(ex ->
-                ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint(urlPrefix + "/rp-login"))
+        http.exceptionHandling((e) ->
+                e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
         );
 
-        // CORS configuration
-        http.cors(c -> c.configurationSource(corsConfigurationSource()));
+        http.cors(c -> {
+            c.configurationSource(corsConfigurationSource());
+        });
 
         return http.build();
     }
 
-    /**
-     * Default security filter chain for regular web endpoints
-     */
+
     @Bean
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .formLogin(form -> form
-                .loginPage(urlPrefix + "/rp-login")
-                .loginProcessingUrl(urlPrefix + "/login")
-                .permitAll());
+                .formLogin(form -> form
+                        .loginPage("/rp-login")
+                        .loginProcessingUrl("/login")
+                        .permitAll());
 
-        http.csrf(c -> c.disable());
+        http.csrf(
+                c -> c.disable()
+        );
 
-         http.authorizeHttpRequests(auth -> auth
-            .requestMatchers(
-                urlPrefix + "/login",
-                urlPrefix + "/rp-login",
-                urlPrefix + "/.well-known/**",
-                urlPrefix + "/oauth2/**",
-                "/images/**",
-                "/css/**",
-                "/js/**",
-                "/actuator/health"
-            ).permitAll()
-            .anyRequest().authenticated()
+        http.authorizeHttpRequests(
+                c -> c
+                        .requestMatchers(
+                                "/login",
+                                "/images/**",
+                                "/css/**",
+                                "/js/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
         );
 
         return http.build();
@@ -117,13 +103,7 @@ public class AuthorizationServerConfig {
      */
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder()
-                .issuer(issuerURL)
-                .authorizationEndpoint("/oauth2/authorize")
-                .tokenEndpoint("/oauth2/token")
-                .jwkSetEndpoint("/oauth2/jwks")
-                .oidcClientRegistrationEndpoint("/connect/register") // optional
-                .build();
+        return AuthorizationServerSettings.builder().build();
     }
 
     /**

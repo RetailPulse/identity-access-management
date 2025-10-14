@@ -1,10 +1,10 @@
 server:
-  port: 8081
-  urlPrefix: /auth
+  port: 30181
+  servlet:
+    context-path: /auth
 
 auth:
-  origin: "http://localhost:4200"
-  issuer: "http://localhost:8081/auth"
+  origin: "http://localhost:30180"
 
 spring:
   datasource:
@@ -21,23 +21,23 @@ spring:
 client:
   id: client
   name: retail-pulse
-  redirect-uri: http://localhost:4200
-  post-logout-redirect-uri: http://localhost:4200
+  redirect-uri: http://localhost:30180
+  post-logout-redirect-uri: http://localhost:30180
 
 logging:
   level:
     org:
       springframework:
-        security: INFO
+        security: DEBUG
         security.oauth2:
             server:
-              authorization: INFO
+              authorization: DEBUG
         web: INFO
   file:
     name: logs/iam.log
 
 management:
-  endpoints: 
+  endpoints:
     web:
       exposure:
         include: "health"
