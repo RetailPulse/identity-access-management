@@ -59,7 +59,13 @@ public class AuthorizationServerConfig {
                 .permitAll()
             )
             .authorizeHttpRequests(c -> c
-                .requestMatchers("/login", "/images/**", "/css/**", "/js/**").permitAll()
+                .requestMatchers(
+                    "/login", 
+                    "/images/**", 
+                    "/css/**", 
+                    "/js/**",
+                    "/actuator/health"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
 
