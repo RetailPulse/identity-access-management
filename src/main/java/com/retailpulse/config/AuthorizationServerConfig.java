@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.server.authorization.JdbcOAuth2Author
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
@@ -37,14 +38,18 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+    public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
-        http
-            .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-            .with(authorizationServerConfigurer, Customizer.withDefaults())
-            .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login")))
-            .cors(c -> c.configurationSource(corsConfigurationSource()));
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
+
+        http.exceptionHandling((e) ->
+                e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
+        );
+
+        http.cors(c -> {
+            c.configurationSource(corsConfigurationSource());
+        });
 
         return http.build();
     }
@@ -56,18 +61,23 @@ public class AuthorizationServerConfig {
             .formLogin(form -> form
                 .loginPage("/rp-login")
                 .loginProcessingUrl("/login")
-                .permitAll()
-            )
-            .authorizeHttpRequests(c -> c
+                .permitAll());
+
+        http.csrf(
+                c -> c.disable()
+        );
+
+        http.authorizeHttpRequests(
+            c -> c
                 .requestMatchers(
-                    "/login", 
-                    "/images/**", 
-                    "/css/**", 
+                    "/login",
+                    "/images/**",
+                    "/css/**",
                     "/js/**",
                     "/actuator/health"
                 ).permitAll()
                 .anyRequest().authenticated()
-            );
+        );
 
         return http.build();
     }
