@@ -1,8 +1,10 @@
 server:
   port: 8081
+  urlPrefix: /auth
 
 auth:
   origin: "http://localhost:4200"
+  issuer: "http://localhost:8081/auth"
 
 spring:
   datasource:

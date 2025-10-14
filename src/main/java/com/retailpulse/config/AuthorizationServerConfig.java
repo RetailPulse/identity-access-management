@@ -36,52 +36,69 @@ public class AuthorizationServerConfig {
     @Value("${auth.origin}")
     private String originURL;
 
+    @Value("${auth.issuer}")
+    private String issuerURL;
+
+    @Value("${server.urlPrefix:/auth}")
+    private String urlPrefix;
+
+    /**
+     * Security filter chain for OAuth2 Authorization Server endpoints
+     */
     @Bean
     @Order(1)
     public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
+        // Apply default Authorization Server configuration
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
+        // Enable OIDC endpoints
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
 
-        http.exceptionHandling((e) ->
-                e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
+        // Custom login page for unauthenticated users
+        http.exceptionHandling(ex ->
+                ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint(urlPrefix + "/rp-login"))
         );
 
-        http.cors(c -> {
-            c.configurationSource(corsConfigurationSource());
-        });
+        // CORS configuration
+        http.cors(c -> c.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }
 
+    /**
+     * Default security filter chain for regular web endpoints
+     */
     @Bean
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .formLogin(form -> form
-                .loginPage("/rp-login")
-                .loginProcessingUrl("/login")
+                .loginPage(urlPrefix + "/rp-login")
+                .loginProcessingUrl(urlPrefix + "/login")
                 .permitAll());
 
-        http.csrf(
-                c -> c.disable()
-        );
+        http.csrf(c -> c.disable());
 
-        http.authorizeHttpRequests(
-            c -> c
-                .requestMatchers(
-                    "/login",
-                    "/images/**",
-                    "/css/**",
-                    "/js/**",
-                    "/actuator/health"
-                ).permitAll()
-                .anyRequest().authenticated()
+         http.authorizeHttpRequests(auth -> auth
+            .requestMatchers(
+                urlPrefix + "/login",
+                urlPrefix + "/rp-login",
+                urlPrefix + "/.well-known/**",
+                urlPrefix + "/oauth2/**",
+                urlPrefix + "/images/**",
+                urlPrefix + "/css/**",
+                urlPrefix + "/js/**",
+                "/actuator/health"
+            ).permitAll()
+            .anyRequest().authenticated()
         );
 
         return http.build();
     }
 
+    /**
+     * CORS configuration source
+     */
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(originURL));
@@ -95,15 +112,27 @@ public class AuthorizationServerConfig {
         return source;
     }
 
+    /**
+     * Configure Authorization Server endpoints with URL prefix
+     */
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().build();
+        return AuthorizationServerSettings.builder()
+                .issuer(issuerURL)
+                .authorizationEndpoint("/oauth2/authorize")
+                .tokenEndpoint("/oauth2/token")
+                .jwkSetEndpoint("/oauth2/jwks")
+                .oidcClientRegistrationEndpoint("/connect/register") // optional
+                .build();
     }
 
+    /**
+     * JDBC template for Authorization Server persistence
+     */
     @Bean
     public JdbcTemplate jdbcTemplate(DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.setQueryTimeout(30); // Optional: customize query timeout
+        jdbcTemplate.setQueryTimeout(30);
         return jdbcTemplate;
     }
 
@@ -121,15 +150,18 @@ public class AuthorizationServerConfig {
         return new JdbcOAuth2AuthorizationConsentService(jdbcOperations, registeredClientRepository);
     }
 
+    /**
+     * JWT token customizer to include roles
+     */
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 context.getClaims().claims(claims -> {
                     Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                        .stream()
-                        .map(c -> c.replaceFirst("^ROLE_", ""))
-                        .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+                            .stream()
+                            .map(c -> c.replaceFirst("^ROLE_", ""))
+                            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
                     claims.put("roles", roles);
                 });
             }
