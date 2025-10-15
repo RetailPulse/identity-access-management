@@ -1,10 +1,10 @@
 server:
-  port: 30181
+  port: 8081
   servlet:
     context-path: /auth
 
 auth:
-  origin: "http://localhost:30180"
+  origin: "http://localhost:30080"
 
 spring:
   datasource:
@@ -21,8 +21,8 @@ spring:
 client:
   id: client
   name: retail-pulse
-  redirect-uri: http://localhost:30180
-  post-logout-redirect-uri: http://localhost:30180
+  redirect-uri: http://localhost:30080
+  post-logout-redirect-uri: http://localhost:30080
 
 logging:
   level:
