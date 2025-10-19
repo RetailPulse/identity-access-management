@@ -33,118 +33,119 @@ import java.util.stream.Collectors;
 @Configuration
 public class AuthorizationServerConfig {
 
-    @Value("${auth.origin}")
-    private String originURL;
+  @Value("${auth.origin}")
+  private String originURL;
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+  @Bean
+  @Order(1)
+  public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
+    OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
+    http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
 
-        http.exceptionHandling((e) ->
-                e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
-        );
+    http.exceptionHandling((e) ->
+      e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
+    );
 
-        http.cors(c -> {
-            c.configurationSource(corsConfigurationSource());
+    http.cors(c -> {
+        c.configurationSource(corsConfigurationSource());
+    });
+
+    return http.build();
+  }
+
+
+  @Bean
+  @Order(2)
+  public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+    http
+    .formLogin(form -> form
+      .loginPage("/rp-login")
+      .loginProcessingUrl("/login")
+      .permitAll());
+
+    http.csrf(c -> c.disable());
+
+    http.authorizeHttpRequests(c -> c                
+      .requestMatchers(
+        "/login",
+        "/images/**",
+        "/css/**",
+        "/js/**",
+        "/actuator/info",
+        "/actuator/prometheus",
+        "/actuator/health"
+      ).permitAll()
+      .anyRequest().authenticated()
+    );
+
+    return http.build();
+  }
+
+  /**
+   * CORS configuration source
+   */
+  private CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of(originURL));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    configuration.setExposedHeaders(List.of("Authorization"));
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
+
+  /**
+   * Configure Authorization Server endpoints with URL prefix
+   */
+  @Bean
+  public AuthorizationServerSettings authorizationServerSettings() {
+    return AuthorizationServerSettings.builder().build();
+  }
+
+  /**
+   * JDBC template for Authorization Server persistence
+   */
+  @Bean
+  public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+    jdbcTemplate.setQueryTimeout(30);
+    return jdbcTemplate;
+  }
+
+  @Bean
+  public JdbcOAuth2AuthorizationService jdbcOAuth2AuthorizationService(JdbcOperations jdbcOperations, 
+    RegisteredClientRepository registeredClientRepository) {
+
+    return new JdbcOAuth2AuthorizationService(jdbcOperations, registeredClientRepository);
+  }
+
+  @Bean
+  public JdbcOAuth2AuthorizationConsentService jdbcOAuth2AuthorizationConsentService(
+      JdbcOperations jdbcOperations,
+      RegisteredClientRepository registeredClientRepository) {
+
+      return new JdbcOAuth2AuthorizationConsentService(jdbcOperations, registeredClientRepository);
+  }
+
+  /**
+   * JWT token customizer to include roles
+   */
+  @Bean
+  public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+    return context -> {
+      if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+        context.getClaims().claims(claims -> {
+          Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
+            .stream()
+            .map(c -> c.replaceFirst("^ROLE_", ""))
+            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+          claims.put("roles", roles);
         });
-
-        return http.build();
-    }
-
-
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .formLogin(form -> form
-                        .loginPage("/rp-login")
-                        .loginProcessingUrl("/login")
-                        .permitAll());
-
-        http.csrf(
-                c -> c.disable()
-        );
-
-        http.authorizeHttpRequests(
-                c -> c
-                        .requestMatchers(
-                                "/login",
-                                "/images/**",
-                                "/css/**",
-                                "/js/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-        );
-
-        return http.build();
-    }
-
-    /**
-     * CORS configuration source
-     */
-    private CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(originURL));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    /**
-     * Configure Authorization Server endpoints with URL prefix
-     */
-    @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().build();
-    }
-
-    /**
-     * JDBC template for Authorization Server persistence
-     */
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.setQueryTimeout(30);
-        return jdbcTemplate;
-    }
-
-    @Bean
-    public JdbcOAuth2AuthorizationService jdbcOAuth2AuthorizationService(
-            JdbcOperations jdbcOperations,
-            RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationService(jdbcOperations, registeredClientRepository);
-    }
-
-    @Bean
-    public JdbcOAuth2AuthorizationConsentService jdbcOAuth2AuthorizationConsentService(
-            JdbcOperations jdbcOperations,
-            RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationConsentService(jdbcOperations, registeredClientRepository);
-    }
-
-    /**
-     * JWT token customizer to include roles
-     */
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
-        return context -> {
-            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getClaims().claims(claims -> {
-                    Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                            .stream()
-                            .map(c -> c.replaceFirst("^ROLE_", ""))
-                            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
-                    claims.put("roles", roles);
-                });
-            }
-        };
-    }
+      }
+    };
+  }
 }
