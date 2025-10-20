@@ -59,7 +59,7 @@ public class AuthorizationServerConfig {
   @Order(2)
   public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
     http
-    .formLogin(form -> form
+      .formLogin(form -> form
       .loginPage("/rp-login")
       .loginProcessingUrl("/login")
       .permitAll());
