@@ -1,7 +1,6 @@
 package com.retailpulse.config;
 
 import com.nimbusds.jose.jwk.*;
-import com.nimbusds.jose.proc.SecurityContext;
 import org.junit.jupiter.api.Test;
 
 import java.security.interfaces.RSAPublicKey;
