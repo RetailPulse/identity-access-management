@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
@@ -20,6 +21,8 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -39,17 +42,17 @@ public class AuthorizationServerConfig {
   @Bean
   @Order(1)
   public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
-    OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+    OAuth2AuthorizationServerConfigurer serverConfiguration = new OAuth2AuthorizationServerConfigurer();
+    RequestMatcher endpoints = serverConfiguration.getEndpointsMatcher();
 
-    http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
-
-    http.exceptionHandling((e) ->
+    http.securityMatcher(endpoints)
+                    .authorizeHttpRequests( auth -> auth.anyRequest().authenticated())
+                            .csrf( csrf -> csrf.ignoringRequestMatchers(endpoints))
+    .exceptionHandling(e ->
       e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/rp-login"))
-    );
-
-    http.cors(c -> {
-        c.configurationSource(corsConfigurationSource());
-    });
+    )
+    .cors(c -> c.configurationSource(corsConfigurationSource()))
+            .with(serverConfiguration, conf -> conf.oidc(Customizer.withDefaults()));
 
     return http.build();
   }
@@ -64,7 +67,7 @@ public class AuthorizationServerConfig {
       .loginProcessingUrl("/login")
       .permitAll());
 
-    http.csrf(c -> c.disable());
+    http.csrf(AbstractHttpConfigurer::disable);
 
     http.authorizeHttpRequests(c -> c                
       .requestMatchers(
