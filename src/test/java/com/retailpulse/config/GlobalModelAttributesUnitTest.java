@@ -10,7 +10,6 @@ public class GlobalModelAttributesUnitTest {
     @Test
     void urlPrefix_returns_value_from_field() {
         GlobalModelAttributes advice = new GlobalModelAttributes();
-        // Simulate @Value injection
         ReflectionTestUtils.setField(advice, "urlPrefix", "/custom-prefix");
 
         assertThat(advice.urlPrefix()).isEqualTo("/custom-prefix");

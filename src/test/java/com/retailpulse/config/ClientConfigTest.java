@@ -25,7 +25,6 @@ import static org.mockito.Mockito.*;
 public class ClientConfigTest {
     private ClientConfig config;
 
-    // “Properties” wired via @Value in production – set via reflection here
     private final String clientId = "web-client";
     private final String clientName = "RetailPulse Web";
     private final String redirectUri = "http://localhost:4200/login/oauth2/code/retailpulse";
@@ -34,7 +33,6 @@ public class ClientConfigTest {
     @BeforeEach
     void setUp() {
         config = new ClientConfig();
-        // Inject @Value fields
         ReflectionTestUtils.setField(config, "clientId", clientId);
         ReflectionTestUtils.setField(config, "clientName", clientName);
         ReflectionTestUtils.setField(config, "redirectUri", redirectUri);
@@ -43,15 +41,13 @@ public class ClientConfigTest {
 
     @Test
     void initializeClients_savesWhenMissing() throws Exception {
-        // Given a repository that returns "not found"
         RegisteredClientRepository repo = mock(RegisteredClientRepository.class);
         when(repo.findByClientId(clientId)).thenReturn(null);
 
         // When
         var runner = config.initializeClients(repo);
-        runner.run(); // executes seeding logic
+        runner.run();
 
-        // Then a client is saved with the expected settings
         ArgumentCaptor<RegisteredClient> captor = ArgumentCaptor.forClass(RegisteredClient.class);
         verify(repo).save(captor.capture());
         RegisteredClient saved = captor.getValue();
@@ -59,7 +55,6 @@ public class ClientConfigTest {
         assertThat(saved.getClientId()).isEqualTo(clientId);
         assertThat(saved.getClientName()).isEqualTo(clientName);
 
-        // AuthN/AuthZ methods
         assertThat(saved.getClientAuthenticationMethods())
                 .contains(ClientAuthenticationMethod.NONE);
         assertThat(saved.getAuthorizationGrantTypes())
@@ -92,7 +87,6 @@ public class ClientConfigTest {
     @Test
     void initializeClients_skipsWhenAlreadyExists() throws Exception {
         RegisteredClientRepository repo = mock(RegisteredClientRepository.class);
-        // Simulate existing client
         RegisteredClient existing = RegisteredClient.withId("id-1")
                 .clientId(clientId)
                 .clientName(clientName)
@@ -108,7 +102,6 @@ public class ClientConfigTest {
         var runner = config.initializeClients(repo);
         runner.run();
 
-        // Should NOT save again
         verify(repo, never()).save(any());
     }
 
@@ -121,7 +114,6 @@ public class ClientConfigTest {
         var runner = config.initializeClients(repo);
         Executable exec = runner::run;
 
-        // Method catches and logs the exception; no throw to caller
         assertDoesNotThrow(exec);
     }
 

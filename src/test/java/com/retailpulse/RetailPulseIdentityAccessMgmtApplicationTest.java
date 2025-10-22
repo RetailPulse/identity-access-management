@@ -18,7 +18,6 @@ public class RetailPulseIdentityAccessMgmtApplicationTest {
         try (MockedStatic<SpringApplication> mocked = Mockito.mockStatic(SpringApplication.class)) {
             ConfigurableApplicationContext ctx = Mockito.mock(ConfigurableApplicationContext.class);
 
-            // Stub the static call
             mocked.when(() -> SpringApplication.run(
                     Mockito.eq(RetailPulseIdentityAccessMgmtApplication.class),
                     Mockito.any()
@@ -27,7 +26,6 @@ public class RetailPulseIdentityAccessMgmtApplicationTest {
             // Call main
             RetailPulseIdentityAccessMgmtApplication.main(args);
 
-            // Verify it delegated to SpringApplication.run with our app class
             mocked.verify(() -> SpringApplication.run(
                     Mockito.eq(RetailPulseIdentityAccessMgmtApplication.class),
                     Mockito.any()

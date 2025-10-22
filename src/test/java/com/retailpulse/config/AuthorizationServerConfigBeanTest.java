@@ -64,32 +64,27 @@ public class AuthorizationServerConfigBeanTest {
 
         JwtClaimsSet claims = builder.build();
 
-        // Read from the raw map to avoid Optional vs non-Optional differences
         Object rolesObj = claims.getClaims().get("roles");
         assertThat(rolesObj)
                 .asInstanceOf(set(String.class))
                 .isEmpty();
     }
 
-    /** Verifies jwtTokenCustomizer adds "roles" claim for access tokens, stripping ROLE_ prefix. */
     @Test
     void jwtCustomizer_addsRoles_forAccessTokenOnly() {
         AuthorizationServerConfig config = new AuthorizationServerConfig();
 
         OAuth2TokenCustomizer<JwtEncodingContext> customizer = (OAuth2TokenCustomizer<JwtEncodingContext>) config.jwtTokenCustomizer();
 
-        // Mock JwtEncodingContext (final class -> Mockito must support final classes; use mockito-inline on classpath)
         JwtEncodingContext ctx = mock(JwtEncodingContext.class);
         when(ctx.getTokenType()).thenReturn(OAuth2TokenType.ACCESS_TOKEN);
         var authorities = AuthorityUtils.createAuthorityList("ROLE_ADMIN", "ROLE_USER");
 
-        // Mock principal with ROLE_ authorities
         var auth = mock(org.springframework.security.core.Authentication.class);
         //noinspection unchecked
         when(auth.getAuthorities()).thenReturn(Collections.unmodifiableList(new ArrayList(authorities)));
         when(ctx.getPrincipal()).thenReturn(auth);
 
-        // Capture the map passed into builder.claims(...)
         JwtClaimsSet.Builder builder = mock(JwtClaimsSet.Builder.class);
         AtomicReference<Map<String, Object>> captured = new AtomicReference<>();
         when(builder.claims(any())).thenAnswer(inv -> {
