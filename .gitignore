@@ -16,7 +16,8 @@
 *.ear
 
 # IntelliJ IDEA files
-.idea/
+.idea/*.*
+.idea/**/*.*
 *.iml
 *.iws
 out/
@@ -45,7 +46,6 @@ target/
 
 # Gradle directories
 .gradle/
-build/
 
 # Generated files
 !gradle/wrapper/gradle-wrapper.jar
