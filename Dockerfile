@@ -1,27 +1,43 @@
-# First stage: Build the Spring Boot application
-FROM maven:3.9.9-eclipse-temurin-24-alpine AS builder
+############################
+# Stage 1: Build
+############################
+FROM maven:3.9.9-eclipse-temurin-21 AS builder
 
-# Set working directory
+WORKDIR /build
+
+# Copy your project files into the container
+COPY . .
+
+# Build the Spring Boot fat jar
+RUN mvn clean package -DskipTests
+
+############################
+# Stage 2: Runtime
+############################
+FROM eclipse-temurin:21-jre-noble
+
+# Install curl + tzdata (Debian-based image)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl tzdata ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV JAVA_HOME=/opt/java/openjdk \
+    PATH="/opt/java/openjdk/bin:${PATH}" \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
+
 WORKDIR /app
 
-# Copy the project files
-COPY pom.xml .
-COPY src ./src
+# Copy jar from builder stage
+COPY --from=builder /build/target/*.jar app.jar
 
-# Build the application
-RUN mvn clean package
+# Create non-root user for runtime
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser && chown -R appuser:appgroup /app
+USER appuser
 
-# Second stage: Run the built JAR in a lightweight JDK image
-FROM eclipse-temurin:24-jdk-alpine AS runner
-
-# Set working directory
-WORKDIR /app
-
-# Copy the built JAR from the builder stage
-COPY --from=builder /app/target/*.jar app.jar
-
-# Expose the application port
+# Expose port
 EXPOSE 8081
 
-# Run the application
+# Start the service
 ENTRYPOINT ["java", "-jar", "app.jar"]
